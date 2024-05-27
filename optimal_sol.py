@@ -90,114 +90,127 @@ for i in range(len(df_dessert)):
     e[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f + n_s + n_d, 0]
 
 
+# Model
+model = gp.Model("Meal_Planning")
 
-# # Model
-# model = gp.Model("Meal_Planning")
+# Decision variables
+x = model.addVars(B, K, vtype=GRB.BINARY, name="x")
+y = model.addVars(F, [1, 2], K, vtype=GRB.BINARY, name="y")
+z = model.addVars(S, [1, 2], K, vtype=GRB.BINARY, name="z")
+w = model.addVars(D, K, vtype=GRB.BINARY, name="w")
+v = model.addVars(E, K, vtype=GRB.BINARY, name="v")
 
-# # Decision variables
-# x = model.addVars(B, K, vtype=GRB.BINARY, name="x")
-# y = model.addVars(F, [1, 2], K, vtype=GRB.BINARY, name="y")
-# z = model.addVars(S, [1, 2], K, vtype=GRB.BINARY, name="z")
-# w = model.addVars(D, K, vtype=GRB.BINARY, name="w")
-# v = model.addVars(E, K, vtype=GRB.BINARY, name="v")
+# Objective function
+model.setObjective(
+    gp.quicksum(b[i, 6] * x[i, k] for i in B for k in K) +
+    gp.quicksum(d[i, 6] * w[i, k] for i in D for k in K) +
+    gp.quicksum(e[i, 6] * v[i, k] for i in E for k in K) +
+    gp.quicksum(f[i, 6] * y[i, j, k]  for i in F for j in [1, 2] for k in K) +
+    gp.quicksum(s[i, 6] * z[i, j, k] for i in S for j in [1, 2] for k in K),
+    GRB.MAXIMIZE
+)
 
-# # Objective function
-# model.setObjective(
-#     gp.quicksum(b[i, 6] * x[i, k] for i in B for k in K) +
-#     gp.quicksum(d[i, 6] * w[i, k] for i in D for k in K) +
-#     gp.quicksum(e[i, 6] * v[i, k] for i in E for k in K) +
-#     gp.quicksum(f[i, 6] * y[i, j, k] + s[i, 6] * z[i, j, k] for i in F for j in [1, 2] for k in K),
-#     GRB.MAXIMIZE
-# )
+# Constraints
+# Nutrition Constraints
+for k in K:
+    model.addConstr(
+        gp.quicksum(b[i, 1] * x[i, k] for i in B) +
+        gp.quicksum(d[i, 1] * w[i, k] for i in D) +
+        gp.quicksum(e[i, 1] * v[i, k] for i in E) +
+        gp.quicksum(f[i, 1] * y[i, j, k] for i in F for j in [1, 2]) +
+        gp.quicksum(s[i, 1] * z[i, j, k] for i in S for j in [1, 2]) <= 
+        (40 - BMI_level * 5) * W
+    )
+    model.addConstr(
+        gp.quicksum(b[i, 2] * x[i, k] for i in B) +
+        gp.quicksum(d[i, 2] * w[i, k] for i in D) +
+        gp.quicksum(e[i, 2] * v[i, k] for i in E) +
+        gp.quicksum(f[i, 2] * y[i, j, k] for i in F for j in [1, 2]) +
+        gp.quicksum(s[i, 2] * z[i, j, k] for i in S for j in [1, 2]) >= 
+        0.8 * W
+    )
+    model.addConstr(
+        gp.quicksum(b[i, 3] * x[i, k] for i in B) +
+        gp.quicksum(d[i, 3] * w[i, k] for i in D) +
+        gp.quicksum(e[i, 3] * v[i, k] for i in E) +
+        gp.quicksum(f[i, 3] * y[i, j, k] for i in F for j in [1, 2]) +
+        gp.quicksum(s[i, 3] * z[i, j, k] for i in S for j in [1, 2]) <= 
+        2000
+    )
+    model.addConstr(
+        gp.quicksum(b[i, 4] * x[i, k] for i in B) +
+        gp.quicksum(d[i, 4] * w[i, k] for i in D) +
+        gp.quicksum(e[i, 4] * v[i, k] for i in E) +
+        gp.quicksum(f[i, 4] * y[i, j, k] for i in F for j in [1, 2]) +
+        gp.quicksum(s[i, 4] * z[i, j, k] for i in S for j in [1, 2]) <= 
+        70
+    )
 
-# # Constraints
-# # Nutrition Constraints
-# for k in K:
-#     model.addConstr(
-#         gp.quicksum(b[i, 1] * x[i, k] for i in B) +
-#         gp.quicksum(d[i, 1] * w[i, k] for i in D) +
-#         gp.quicksum(e[i, 1] * v[i, k] for i in E) +
-#         gp.quicksum(f[i, 1] * y[i, j, k] + s[i, 1] * z[i, j, k] for i in F for j in [1, 2]) <= 
-#         (40 - BMI_level * 5) * W
-#     )
-#     model.addConstr(
-#         gp.quicksum(b[i, 2] * x[i, k] for i in B) +
-#         gp.quicksum(d[i, 2] * w[i, k] for i in D) +
-#         gp.quicksum(e[i, 2] * v[i, k] for i in E) +
-#         gp.quicksum(f[i, 2] * y[i, j, k] + s[i, 2] * z[i, j, k] for i in F for j in [1, 2]) <= 
-#         0.8 * W
-#     )
-#     model.addConstr(
-#         gp.quicksum(b[i, 3] * x[i, k] for i in B) +
-#         gp.quicksum(d[i, 3] * w[i, k] for i in D) +
-#         gp.quicksum(e[i, 3] * v[i, k] for i in E) +
-#         gp.quicksum(f[i, 3] * y[i, j, k] + s[i, 3] * z[i, j, k] for i in F for j in [1, 2]) <= 
-#         2
-#     )
-#     model.addConstr(
-#         gp.quicksum(b[i, 4] * x[i, k] for i in B) +
-#         gp.quicksum(d[i, 4] * w[i, k] for i in D) +
-#         gp.quicksum(e[i, 4] * v[i, k] for i in E) +
-#         gp.quicksum(f[i, 4] * y[i, j, k] + s[i, 4] * z[i, j, k] for i in F for j in [1, 2]) <= 
-#         70
-#     )
+# Budget Constraint
+model.addConstr(
+    gp.quicksum(
+        gp.quicksum(b[i, 5] * x[i, k] for i in B) +
+        gp.quicksum(d[i, 5] * w[i, k] for i in D) +
+        gp.quicksum(e[i, 5] * v[i, k] for i in E) +
+        gp.quicksum(f[i, 5] * y[i, j, k] for i in F for j in [1, 2]) +
+        gp.quicksum(+ s[i, 5] * z[i, j, k] for i in S for j in [1, 2])
+        for k in K
+    ) <= budget
+)
 
-# # Budget Constraint
-# model.addConstr(
-#     gp.quicksum(
-#         gp.quicksum(b[i, 5] * x[i, k] for i in B) +
-#         gp.quicksum(d[i, 5] * w[i, k] for i in D) +
-#         gp.quicksum(e[i, 5] * v[i, k] for i in E) +
-#         gp.quicksum(f[i, 5] * y[i, j, k] + s[i, 5] * z[i, j, k] for i in F for j in [1, 2])
-#         for k in K
-#     ) <= budget
-# )
+# Beverage and Dessert Constraints
+model.addConstr(gp.quicksum(w[i, k] for i in D for k in K) <= 3)
+model.addConstr(gp.quicksum(v[i, k] for i in E for k in K) <= 2)
 
-# # Beverage and Dessert Constraints
-# model.addConstr(gp.quicksum(w[i, k] for i in D for k in K) <= 3)
-# model.addConstr(gp.quicksum(v[i, k] for i in E for k in K) <= 2)
+# Repetition Constraints
+for i in F:
+    for k in K:
+        if k > 1:
+            model.addConstr(
+                gp.quicksum(y[i, j, k] + y[i, j, k-1] for j in [1, 2]) <= 1
+            )
 
-# # Repetition Constraints
-# for i in F:
-#     for k in K:
-#         if k > 1:
-#             model.addConstr(
-#                 gp.quicksum(y[i, j, k] + z[i, j, k] + y[i, j, k-1] + z[i, j, k-1] for j in [1, 2]) <= 1
-#             )
-# for i in B:
-#     for k in K:
-#         if k > 1:
-#             model.addConstr(x[i, k] + x[i, k-1] <= 1)
+for i in S:
+    for k in K:
+        if k > 1:
+            model.addConstr(
+                gp.quicksum(z[i, j, k] + z[i, j, k-1] for j in [1, 2]) <= 1
+            )
 
-# # Meal Completeness Constraints
-# for k in K:
-#     model.addConstr(gp.quicksum(x[i, k] for i in B) == 1)
-#     for j in [1, 2]:
-#         model.addConstr(gp.quicksum(y[i, j, k] for i in F) == 1)
+for i in B:
+    for k in K:
+        if k > 1:
+            model.addConstr(x[i, k] + x[i, k-1] <= 1)
 
-# # Optimize model
-# model.optimize()
+# Meal Completeness Constraints
+for k in K:
+    model.addConstr(gp.quicksum(x[i, k] for i in B) == 1)
+    for j in [1, 2]:
+        model.addConstr(gp.quicksum(y[i, j, k] for i in F) == 1)
 
-# # Print solution
-# if model.status == GRB.OPTIMAL:
-#     print("Optimal solution found:")
-#     for k in K:
-#         print(f"Day {k}:")
-#         for i in B:
-#             if x[i, k].x > 0.5:
-#                 print(f"  Breakfast: {i}")
-#         for j in [1, 2]:
-#             for i in F:
-#                 if y[i, j, k].x > 0.5:
-#                     print(f"  Meal {j}: Food {i}")
-#             for i in S:
-#                 if z[i, j, k].x > 0.5:
-#                     print(f"  Meal {j}: Side {i}")
-#         for i in D:
-#             if w[i, k].x > 0.5:
-#                 print(f"  Beverage: {i}")
-#         for i in E:
-#             if v[i, k].x > 0.5:
-#                 print(f"  Dessert: {i}")
-# else:
-#     print("No optimal solution found.")
+# Optimize model
+model.optimize()
+
+# Print solution
+if model.status == GRB.OPTIMAL:
+    print("Optimal solution found:")
+    for k in K:
+        print(f"Day {k}:")
+        for i in B:
+            if x[i, k].x > 0.5:
+                print(f"  Breakfast: {i}")
+        for j in [1, 2]:
+            for i in F:
+                if y[i, j, k].x > 0.5:
+                    print(f"  Meal {j}: Food {i}")
+            for i in S:
+                if z[i, j, k].x > 0.5:
+                    print(f"  Meal {j}: Side {i}")
+        for i in D:
+            if w[i, k].x > 0.5:
+                print(f"  Beverage: {i}")
+        for i in E:
+            if v[i, k].x > 0.5:
+                print(f"  Dessert: {i}")
+else:
+    print("No optimal solution found.")
