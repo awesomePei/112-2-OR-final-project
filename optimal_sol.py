@@ -4,7 +4,7 @@ import pandas as pd
 
 
 # 匯入檔案
-df_person_data = pd.read_csv('/Users/cindychang/Documents/school/大二/OR/Final/column_person_data_new/person1_data.csv')
+df_person_data = pd.read_csv('/Users/cindychang/Documents/school/大二/OR/Final/person_data/person1_data.csv')
 W = df_person_data.iloc[0, 0]  
 H = df_person_data.iloc[1, 0]
 BMI_level = df_person_data.iloc[2, 0]
@@ -194,6 +194,7 @@ model.optimize()
 # Print solution
 if model.status == GRB.OPTIMAL:
     print("Optimal solution found:")
+    print("Objective Value:", model.objVal)
     for k in K:
         print(f"Day {k}:")
         for i in B:
