@@ -4,6 +4,12 @@ import pandas as pd
 
 
 # 匯入檔案
+df_person_data = pd.read_csv('/Users/cindychang/Documents/school/大二/OR/Final/column_person_data_new/person1_data.csv')
+W = df_person_data.iloc[0, 0]  
+H = df_person_data.iloc[1, 0]
+BMI_level = df_person_data.iloc[2, 0]
+budget = df_person_data.iloc[3, 0]
+
 df_breakfast = pd.read_csv('/Users/cindychang/Documents/school/大二/OR/Final/final-data/OR Final - Breakfast-final.csv')
 df_breakfast.reset_index(drop=True, inplace=True)
 n_b = len(df_breakfast.index)
@@ -45,7 +51,7 @@ for i in range(len(df_breakfast)):
     b[i, 3] = df_breakfast.at[i, 'Sodium']
     b[i, 4] = df_breakfast.at[i, 'Sugar']
     b[i, 5] = df_breakfast.at[i, 'Price']
-    # b[i, 6] = df_breakfast.at[i, 'Happiness']
+    b[i, 6] = df_person_data.iloc[i + 3, 0]
 
 f = {}
 for i in range(len(df_food)):
@@ -54,7 +60,7 @@ for i in range(len(df_food)):
     f[i, 3] = df_food.at[i, 'Sodium']
     f[i, 4] = df_food.at[i, 'Sugar']
     f[i, 5] = df_food.at[i, 'Price']
-    # f[i, 6] = df_food.at[i, 'Happiness']
+    f[i, 6] = df_person_data.iloc[i + 3 + n_b, 0]
 
 s = {}
 for i in range(len(df_sidemeal)):
@@ -63,7 +69,7 @@ for i in range(len(df_sidemeal)):
     s[i, 3] = df_sidemeal.at[i, 'Sodium']
     s[i, 4] = df_sidemeal.at[i, 'Sugar']
     s[i, 5] = df_sidemeal.at[i, 'Price']
-    # s[i, 6] = df_sidemeal.at[i, 'Happiness']
+    s[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f, 0]
 
 d = {}
 for i in range(len(df_beverage)):
@@ -72,7 +78,7 @@ for i in range(len(df_beverage)):
     d[i, 3] = df_beverage.at[i, 'Sodium']
     d[i, 4] = df_beverage.at[i, 'Sugar']
     d[i, 5] = df_beverage.at[i, 'Price']
-    # d[i, 6] = df_beverage.at[i, 'Happiness']
+    d[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f + n_s, 0]
 
 e = {}
 for i in range(len(df_dessert)):
@@ -81,12 +87,9 @@ for i in range(len(df_dessert)):
     e[i, 3] = df_dessert.at[i, 'Sodium']
     e[i, 4] = df_dessert.at[i, 'Sugar']
     e[i, 5] = df_dessert.at[i, 'Price']
-    # e[i, 6] = df_dessert.at[i, 'Happiness']
+    e[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f + n_s + n_d, 0]
 
-# # Personal variables
-# W = 70  # Example weight, to be set accordingly
-# BMI_level = 2  # Example BMI level, to be set accordingly
-# budget = 200  # Example budget, to be set accordingly
+
 
 # # Model
 # model = gp.Model("Meal_Planning")
