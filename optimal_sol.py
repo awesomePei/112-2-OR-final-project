@@ -51,7 +51,7 @@ for i in range(len(df_breakfast)):
     b[i, 3] = df_breakfast.at[i, 'Sodium']
     b[i, 4] = df_breakfast.at[i, 'Sugar']
     b[i, 5] = df_breakfast.at[i, 'Price']
-    b[i, 6] = df_person_data.iloc[i + 3, 0]
+    b[i, 6] = df_person_data.iloc[i + 4, 0]
 
 f = {}
 for i in range(len(df_food)):
@@ -60,7 +60,7 @@ for i in range(len(df_food)):
     f[i, 3] = df_food.at[i, 'Sodium']
     f[i, 4] = df_food.at[i, 'Sugar']
     f[i, 5] = df_food.at[i, 'Price']
-    f[i, 6] = df_person_data.iloc[i + 3 + n_b, 0]
+    f[i, 6] = df_person_data.iloc[i + 4 + n_b, 0]
 
 s = {}
 for i in range(len(df_sidemeal)):
@@ -69,7 +69,7 @@ for i in range(len(df_sidemeal)):
     s[i, 3] = df_sidemeal.at[i, 'Sodium']
     s[i, 4] = df_sidemeal.at[i, 'Sugar']
     s[i, 5] = df_sidemeal.at[i, 'Price']
-    s[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f, 0]
+    s[i, 6] = df_person_data.iloc[i + 4 + n_b + n_f, 0]
 
 d = {}
 for i in range(len(df_beverage)):
@@ -78,7 +78,7 @@ for i in range(len(df_beverage)):
     d[i, 3] = df_beverage.at[i, 'Sodium']
     d[i, 4] = df_beverage.at[i, 'Sugar']
     d[i, 5] = df_beverage.at[i, 'Price']
-    d[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f + n_s, 0]
+    d[i, 6] = df_person_data.iloc[i + 4 + n_b + n_f + n_s, 0]
 
 e = {}
 for i in range(len(df_dessert)):
@@ -87,7 +87,7 @@ for i in range(len(df_dessert)):
     e[i, 3] = df_dessert.at[i, 'Sodium']
     e[i, 4] = df_dessert.at[i, 'Sugar']
     e[i, 5] = df_dessert.at[i, 'Price']
-    e[i, 6] = df_person_data.iloc[i + 3 + n_b + n_f + n_s + n_d, 0]
+    e[i, 6] = df_person_data.iloc[i + 4 + n_b + n_f + n_s + n_d, 0]
 
 
 # Model
@@ -100,6 +100,12 @@ z = model.addVars(S, [1, 2], K, vtype=GRB.BINARY, name="z")
 w = model.addVars(D, K, vtype=GRB.BINARY, name="w")
 v = model.addVars(E, K, vtype=GRB.BINARY, name="v")
 
+# Repetition penalty variables
+# rep_penalty_x = model.addVars(B, K, vtype=GRB.BINARY, name="rep_penalty_x")
+# rep_penalty_y = model.addVars(F, [1, 2], K, vtype=GRB.BINARY, name="rep_penalty_y")
+# rep_penalty_z = model.addVars(S, [1, 2], K, vtype=GRB.BINARY, name="rep_penalty_z")
+
+
 # Objective function
 model.setObjective(
     gp.quicksum(b[i, 6] * x[i, k] for i in B for k in K) +
@@ -109,6 +115,20 @@ model.setObjective(
     gp.quicksum(s[i, 6] * z[i, j, k] for i in S for j in [1, 2] for k in K),
     GRB.MAXIMIZE
 )
+
+
+
+# model.setObjective(
+#     gp.quicksum(b[i, 6] * x[i, k] for i in B for k in K) +
+#     gp.quicksum(d[i, 6] * w[i, k] for i in D for k in K) +
+#     gp.quicksum(e[i, 6] * v[i, k] for i in E for k in K) +
+#     gp.quicksum(f[i, 6] * y[i, j, k] for i in F for j in [1, 2] for k in K) +
+#     gp.quicksum(s[i, 6] * z[i, j, k] for i in S for j in [1, 2] for k in K) -
+#     gp.quicksum(10 * rep_penalty_x[i, k] for i in B for k in K) -
+#     gp.quicksum(10 * rep_penalty_y[i, j, k] for i in F for j in [1, 2] for k in K) -
+#     gp.quicksum(10 * rep_penalty_z[i, j, k] for i in S for j in [1, 2] for k in K),
+#     GRB.MAXIMIZE
+# )
 
 # Constraints
 # Nutrition Constraints
@@ -182,14 +202,39 @@ for i in B:
         if k > 1:
             model.addConstr(x[i, k] + x[i, k-1] <= 1)
 
+# Repetition Constraints for 7 days
+# for i in B:
+#     for k in K:
+#         for delta in range(1, 7):
+#             if k + delta < len(K):
+#                 model.addConstr(x[i, k] + x[i, k+delta] <= 1 + rep_penalty_x[i, k])
+
+# for i in F:
+#     for j in [1, 2]:
+#         for k in K:
+#             for delta in range(1, 7):
+#                 if k + delta < len(K):
+#                     model.addConstr(y[i, j, k] + y[i, j, k+delta] <= 1 + rep_penalty_y[i, j, k])
+
+# for i in S:
+#     for j in [1, 2]:
+#         for k in K:
+#             for delta in range(1, 7):
+#                 if k + delta < len(K):
+#                     model.addConstr(z[i, j, k] + z[i, j, k+delta] <= 1 + rep_penalty_z[i, j, k])
+
+
+
 # Meal Completeness Constraints
 for k in K:
     model.addConstr(gp.quicksum(x[i, k] for i in B) == 1)
     for j in [1, 2]:
         model.addConstr(gp.quicksum(y[i, j, k] for i in F) == 1)
+        model.addConstr(gp.quicksum(z[i, j, k] for i in S) <= 2)
 
 # Optimize model
 model.optimize()
+
 
 # Print solution
 if model.status == GRB.OPTIMAL:

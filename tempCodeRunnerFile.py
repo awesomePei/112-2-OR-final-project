@@ -1,0 +1,1 @@
+gp.quicksum(b[i, 6] * x[i, k] for i in B for k in K) +
