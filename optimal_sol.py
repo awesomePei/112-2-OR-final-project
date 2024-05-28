@@ -3,8 +3,7 @@ from gurobipy import GRB
 import pandas as pd
 
 
-# 匯入檔案
-df_person_data = pd.read_csv('/Users/cindychang/Documents/school/大二/OR/Final/person_data/person1_data.csv')
+df_person_data = pd.read_csv('/Users/cindychang/Documents/school/大二/OR/Final/person_data/person5_data.csv')
 W = df_person_data.iloc[0, 0]  
 H = df_person_data.iloc[1, 0]
 BMI_level = df_person_data.iloc[2, 0]
@@ -94,17 +93,13 @@ for i in range(len(df_dessert)):
 model = gp.Model("Meal_Planning")
 
 # Decision variables
-x = model.addVars(B, K, vtype=GRB.BINARY, name="x")
-y = model.addVars(F, [1, 2], K, vtype=GRB.BINARY, name="y")
-z = model.addVars(S, [1, 2], K, vtype=GRB.BINARY, name="z")
-w = model.addVars(D, K, vtype=GRB.BINARY, name="w")
-v = model.addVars(E, K, vtype=GRB.BINARY, name="v")
+x = model.addVars(B, K, vtype=GRB.CONTINUOUS, name="x")
+y = model.addVars(F, [1, 2], K, vtype=GRB.CONTINUOUS, name="y")
+z = model.addVars(S, [1, 2], K, vtype=GRB.CONTINUOUS, name="z")
+w = model.addVars(D, K, vtype=GRB.CONTINUOUS, name="w")
+v = model.addVars(E, K, vtype=GRB.CONTINUOUS, name="v")
 
-# Repetition penalty variables
-# rep_penalty_x = model.addVars(B, K, vtype=GRB.BINARY, name="rep_penalty_x")
-# rep_penalty_y = model.addVars(F, [1, 2], K, vtype=GRB.BINARY, name="rep_penalty_y")
-# rep_penalty_z = model.addVars(S, [1, 2], K, vtype=GRB.BINARY, name="rep_penalty_z")
-
+penalty_coeff = 10
 
 # Objective function
 model.setObjective(
@@ -116,19 +111,21 @@ model.setObjective(
     GRB.MAXIMIZE
 )
 
-
-
+# Add penalty terms to the objective function
 # model.setObjective(
 #     gp.quicksum(b[i, 6] * x[i, k] for i in B for k in K) +
 #     gp.quicksum(d[i, 6] * w[i, k] for i in D for k in K) +
 #     gp.quicksum(e[i, 6] * v[i, k] for i in E for k in K) +
 #     gp.quicksum(f[i, 6] * y[i, j, k] for i in F for j in [1, 2] for k in K) +
 #     gp.quicksum(s[i, 6] * z[i, j, k] for i in S for j in [1, 2] for k in K) -
-#     gp.quicksum(10 * rep_penalty_x[i, k] for i in B for k in K) -
-#     gp.quicksum(10 * rep_penalty_y[i, j, k] for i in F for j in [1, 2] for k in K) -
-#     gp.quicksum(10 * rep_penalty_z[i, j, k] for i in S for j in [1, 2] for k in K),
-#     GRB.MAXIMIZE
-# )
+#     penalty_coeff * (
+#         gp.quicksum(x.sum(i, '*') * (x.sum(i, '*') - 1) / 2 for i in B) +
+#         gp.quicksum(w.sum(i, '*') * (w.sum(i, '*') - 1) / 2 for i in D) +
+#         gp.quicksum(v.sum(i, '*') * (v.sum(i, '*') - 1) / 2 for i in E) +
+#         gp.quicksum(y.sum(i, j, '*') * (y.sum(i, j, '*') - 1) / 2 for i in F for j in [1, 2]) +
+#         gp.quicksum(z.sum(i, j, '*') * (z.sum(i, j, '*') - 1) / 2 for i in S for j in [1, 2])
+#     ),
+#     GRB.MAXIMIZE)
 
 # Constraints
 # Nutrition Constraints
@@ -182,48 +179,6 @@ model.addConstr(
 model.addConstr(gp.quicksum(w[i, k] for i in D for k in K) <= 3)
 model.addConstr(gp.quicksum(v[i, k] for i in E for k in K) <= 2)
 
-# Repetition Constraints
-for i in F:
-    for k in K:
-        if k > 1:
-            model.addConstr(
-                gp.quicksum(y[i, j, k] + y[i, j, k-1] for j in [1, 2]) <= 1
-            )
-
-for i in S:
-    for k in K:
-        if k > 1:
-            model.addConstr(
-                gp.quicksum(z[i, j, k] + z[i, j, k-1] for j in [1, 2]) <= 1
-            )
-
-for i in B:
-    for k in K:
-        if k > 1:
-            model.addConstr(x[i, k] + x[i, k-1] <= 1)
-
-# Repetition Constraints for 7 days
-# for i in B:
-#     for k in K:
-#         for delta in range(1, 7):
-#             if k + delta < len(K):
-#                 model.addConstr(x[i, k] + x[i, k+delta] <= 1 + rep_penalty_x[i, k])
-
-# for i in F:
-#     for j in [1, 2]:
-#         for k in K:
-#             for delta in range(1, 7):
-#                 if k + delta < len(K):
-#                     model.addConstr(y[i, j, k] + y[i, j, k+delta] <= 1 + rep_penalty_y[i, j, k])
-
-# for i in S:
-#     for j in [1, 2]:
-#         for k in K:
-#             for delta in range(1, 7):
-#                 if k + delta < len(K):
-#                     model.addConstr(z[i, j, k] + z[i, j, k+delta] <= 1 + rep_penalty_z[i, j, k])
-
-
 
 # Meal Completeness Constraints
 for k in K:
@@ -231,6 +186,22 @@ for k in K:
     for j in [1, 2]:
         model.addConstr(gp.quicksum(y[i, j, k] for i in F) == 1)
         model.addConstr(gp.quicksum(z[i, j, k] for i in S) <= 2)
+
+# Define maximum number of times each type of meal can be selected in a week
+max_repeats_per_week = 1  # You can adjust this value based on desired variety
+
+# Add constraints to the model
+# Repetition Constraints
+for i in B:
+    model.addConstr(gp.quicksum(x[i, k] for k in K) <= max_repeats_per_week)
+
+for i in F:
+    for j in [1, 2]:
+        model.addConstr(gp.quicksum(y[i, j, k] for k in K) <= max_repeats_per_week)
+
+for i in S:
+    for j in [1, 2]:
+        model.addConstr(gp.quicksum(z[i, j, k] for k in K) <= max_repeats_per_week)
 
 # Optimize model
 model.optimize()
